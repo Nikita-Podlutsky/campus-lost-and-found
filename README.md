@@ -1,93 +1,97 @@
-# Campus lost and found app
+# Campus Lost & Found
 
-# Суть
-Данная программа созданна для того чтобы люди могли находить потерянные вещь.
+Приложение для поиска и публикации потерянных и найденных вещей.
 
+Backend написан на FastAPI, PostgreSQL, SQLAlchemy и Alembic.
 
-# сценарии
-Сценарий "найти вещь": человек заходит на главный экран, видит карту с точками находок, вводит поисковый запрос, получает список отфильтрованных по релевантности объявлений под картой, кликает на нужное и разворачивается подробная карточка.
-Сценарий "отметить находку": человек переходит на отдельный экран, добавляет фото найденной вещи, пишет описание и место, публикует - объявление появляется на главном экране.
+## Запуск backend
 
-# экраны
+Нужны Python 3.11+, Docker Desktop и uv.
 
+Если uv не установлен:
 
-Главный экран это карта + поиск + список объявлений с разворачивающимися карточками
-Экран публикации это форма с фото, описанием, местом.
+```powershell
+winget install --id=astral-sh.uv -e
+```
 
-Переходы между экранами - с главного экрана кнопкой переходим на экран публикации после публикации возврат на главный.
+Из корня проекта выполните:
 
-## Стек
+```powershell
+Set-Location .\backend
 
-React + TypeScript
-React Router - клиентская маршрутизация
-MUI (Material UI) - библиотека UI-компонентов
-Vite - сборка и dev-сервер
+uv sync --extra dev
 
+if (-not (Test-Path .env)) {
+    Copy-Item .env.example .env
+}
 
+docker desktop start
+docker compose up -d db
 
-## Установка и запуск
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-```bash
+Команда docker compose up -d db запускает PostgreSQL и создаёт пустую базу. Команда uv run alembic upgrade head создаёт в ней таблицы, внешние ключи и индексы.
+
+Параметры подключения находятся в backend/.env. Пример без реальных секретов находится в backend/.env.example.
+
+После запуска:
+
+- API: http://127.0.0.1:8000
+- Swagger: http://127.0.0.1:8000/docs
+- ReDoc: http://127.0.0.1:8000/redoc
+
+## Проверка
+
+В отдельном терминале:
+
+```powershell
+Set-Location .\backend
+
+uv run alembic current
+uv run alembic check
+uv run pytest -p no:cacheprovider
+uv run ruff check .
+
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod http://127.0.0.1:8000/health/db
+```
+
+Остановить PostgreSQL:
+
+```powershell
+docker compose down
+```
+
+Удалить PostgreSQL вместе с локальными данными:
+
+```powershell
+docker compose down -v
+```
+
+## API
+
+Базовый адрес: /api/v1.
+
+- Пользователи: /users
+- Категории: /categories
+- Объявления: /listings
+- Проверка API: /health
+- Проверка базы: /health/db
+
+Для пользователей, категорий и объявлений реализованы создание, чтение, изменение и удаление.
+
+## Frontend
+
+Из корня проекта:
+
+```powershell
 npm install
 npm run dev
 ```
 
-После `npm run dev` приложение доступно по адресу, который выведет
-консоль (обычно `http://localhost:5173`).
-
-Проверка типов и сборка:
-
-```bash
-npm run build
-```
-
-## Структура проекта
-``` bash
-tree /F  # (на windows)
-```
-```
-campus-lost-and-found/
-├── README.md
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── docs/
-│   └── screenshots/
-└── src/
-    ├── main.tsx
-    ├── App.tsx
-    ├── app/
-    │   └── routes.tsx
-    ├── pages/
-    │   ├── HomePage/
-    │   │   └── HomePage.tsx
-    │   └── ReportPage/
-    │       └── ReportPage.tsx 
-    ├── entities/
-    │   └── listing/
-    │       ├── model.ts
-    │       └── mockData.ts
-    ├── features/
-    │   ├── search-listings/
-    │   │   └── SearchBar.tsx
-    │   └── report-listing/
-    │       ├── PhotoCapture.tsx
-    │       └── DescriptionForm.tsx
-    └── shared/
-        └── ui/
-            ├── ListingCard.tsx
-            └── MapView.tsx
-```
-
-## Скриншоты
-
-Главный экран:
-
-![Главный экран](docs/screenshots/home.png)
-
-Экран публикации находки:
-
-![Экран публикации](docs/screenshots/report.png)
+Frontend доступен по адресу http://127.0.0.1:5173. Сейчас он использует моковые данные и ещё не подключён к backend.
 
 ## Модель данных (моковая)
 

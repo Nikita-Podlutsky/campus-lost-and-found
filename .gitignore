@@ -33,3 +33,13 @@ dist-ssr
 uploads/
 *.db
 *.sqlite
+
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+backend/.env
+docs/backend-report.md
